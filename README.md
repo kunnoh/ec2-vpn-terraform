@@ -1,6 +1,6 @@
 # ec2 OpenVpn Access Server Terraform
-**Create openvpn server using terraform.**
 
+Create openvpn server using terraform.
 
 ### Steps
 1. Create AWS account.
@@ -13,18 +13,18 @@
 8. Destroy aws resources.
 
 
-## Prerequsistes
+### Prerequsistes
 - [AWS account](https://aws.amazon.com/free/?gclid=EAIaIQobChMIoYGWjbzChwMVO5RoCR3v7QTxEAAYASAAEgKWQPD_BwE&trk=2d3e6bee-b4a1-42e0-8600-6f2bb4fcb10c&sc_channel=ps&ef_id=EAIaIQobChMIoYGWjbzChwMVO5RoCR3v7QTxEAAYASAAEgKWQPD_BwE:G:s&s_kwcid=AL!4422!3!645125273261!e!!g!!aws!19574556887!145779846712&all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc&awsf.Free%20Tier%20Types=*all&awsf.Free%20Tier%20Categories=*all)
 - [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
 - [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 
 
-## Create new user in AWS and configure AWS CLI
+### Create new user in AWS and configure AWS CLI
 Create a new user. Don't use root account when it's not required. Create a new IAM user that has admin access.
 
-## Install aws-cli
-**Download source code and install.**
+### Install aws-cli
+Download source code and install.
 ```sh
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
@@ -40,15 +40,14 @@ or
 aws -version
 ```
 
-**Login**
+Login
 ```sh
 aws configure
 ```
 
 
-## Install terraform
-### debian/ubuntu
-**Install required dependencies**
+### Install terraform
+Install required dependencies
 ```sh
 sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
 ```
@@ -61,7 +60,7 @@ or
 terraform -version
 ```
 
-**Add the official HashiCorp repository to your system**
+Add the official HashiCorp repository to your system
 
 The lsb_release -cs command finds the distribution release codename for your current system, such as `buster`, `groovy`, or `sid`.
 ```sh
@@ -98,4 +97,3 @@ sudo tee /etc/apt/sources.list.d/hashicorp.list
 - [Terraform aws_security_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group)
 
 - [Terraform aws_instance](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance)
-
