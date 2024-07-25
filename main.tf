@@ -9,7 +9,7 @@ terraform {
 
 # Key-pair
 resource "tls_private_key" "vpn_rsa_4096" {
-  algorithm = "RSA"
+  algorithm = "ED25519"
   rsa_bits  = 4096
 }
 
