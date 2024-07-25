@@ -7,44 +7,37 @@ terraform {
   }
 }
 
-provider "aws" {
-    alias = "Europe"
-    region = "eu-central-1"
+# Key-pair
+resource "tls_private_key" "vpn_rsa_4096" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
-data "aws_region" "current" {
-  provider = aws.Europe
+resource "aws_key_pair" "vpn_ssh_keys" {
+  key_name   = var.vpn_ssh_key
+  public_key = tls_private_key.vpn_rsa_4096.public_key_openssh
 }
 
-# key-pair
-# resource "tls_private_key" "rsa_4096" {
-#   algorithm = "RSA"
-#   rsa_bits  = 4096
-# }
+# Save key on host
+resource "local_file" "private_key" {
+  content = tls_private_key.vpn_rsa_4096.private_key_pem
+  filename = var.vpn_ssh_key
+}
 
-# variable "key_name" {
-  
-# }
-
-# resource "aws_key_pair" "vpn_ssh_keys" {
-#   key_name   = var.key_name
-#   public_key = tls_private_key.rsa_4096.public_key_openssh
-# }
-
-# vpc
+# VPC
 resource "aws_vpc" "vpn_server_vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    Name = "vpn-vpc"
+    Name = "vpn vpc"
   }
 }
 
-# internet gateway
+# Internet Gateway
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.vpn_server_vpc.id
 }
 
-# route table
+# Route Table
 resource "aws_route_table" "vpn_route_table" {
   vpc_id = aws_vpc.vpn_server_vpc.id
 
@@ -59,30 +52,30 @@ resource "aws_route_table" "vpn_route_table" {
   }
 
   tags = {
-    Name = "vpn_route_table_main"
+    Name = "vpn route table"
   }
 }
 
-# subnet
+# Subnet
 resource "aws_subnet" "vpn_subnet_main" {
   vpc_id = aws_vpc.vpn_server_vpc.id
   cidr_block = "10.0.1.0/24"
   availability_zone = "eu-central-1a"
   tags = {
-    Name = "vpn-subnet"
+    Name = "vpn subnet"
   }
 }
 
-# subnet route table associate
+# Subnet Route Table association
 resource "aws_route_table_association" "a" {
   subnet_id = aws_subnet.vpn_subnet_main.id
   route_table_id = aws_route_table.vpn_route_table.id
 }
 
-# create security groups
-resource "aws_security_group" "allow_web" {
+# Security Groups
+resource "aws_security_group" "allow_traffic" {
   name = "alloweb_traffic"
-  description = "Allow web"
+  description = "Allow openvpn"
   vpc_id = aws_vpc.vpn_server_vpc.id
 
   ingress {
@@ -117,43 +110,37 @@ resource "aws_security_group" "allow_web" {
   }
 
   tags = {
-    Name = "allow web traffic, ssh"
+    Name = "allow ssh and openvpn"
   }
 }
 
-# network interface
-resource "aws_network_interface" "vpn_server_nic" {
-  subnet_id = aws_subnet.vpn_subnet_main.id
-  private_ips = [ "10.0.1.49" ]
-  security_groups = [ aws_security_group.allow_web.id ]
-}
-
-# elastic ip
-resource "aws_eip" "vpn_eip" {
-  domain = "vpc"
-  network_interface = aws_network_interface.vpn_server_nic.id
-  associate_with_private_ip = "10.0.1.49"
-  depends_on = [ aws_internet_gateway.gw ]
-}
-
-# create ec2 instance
+# ec2 instance
 resource "aws_instance" "vpn_server" {
-  instance_type = "t2.micro"
-  ami           = "ami-075d8cd2ff03fa6e9"
+  instance_type = var.ec2_instance_type
+  ami = "ami-075d8cd2ff03fa6e9"
   availability_zone = "eu-central-1a"
+  key_name = aws_key_pair.vpn_ssh_keys.key_name
+  associate_public_ip_address = true
 
-  network_interface {
-    device_index = 0
-    network_interface_id = aws_network_interface.vpn_server_nic.id
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update -y",
+      "sudo apt upgrade -y",
+      "sudo apt install openvpn nginx -y",
+      "sudo systemctl enable openvpn",
+      "sudo systemctl start openvpn",
+      "sudo systemctl enable nginx",
+      "sudo systemctl start nginx"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "admin"
+      private_key = file("${var.vpn_ssh_key}")
+      host        = self.public_ip
+    }
   }
 
-  user_data = <<-EOF
-    sudo apt update -y
-    sudo apt upgrade -y
-    sudo apt install nginx
-    sudo systemctl enable nginx
-    sudo systemctl start nginx
-  EOF
   tags = {
     Name = "vpnServer"
   }
