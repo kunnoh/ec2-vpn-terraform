@@ -7,9 +7,13 @@ terraform {
   }
 }
 
+data "aws_region" "current" {
+  provider = aws.EuropeGermany
+}
+
 # Key-pair
 resource "tls_private_key" "vpn_rsa_4096" {
-  algorithm = "ED25519"
+  algorithm   = "RSA"
   rsa_bits  = 4096
 }
 
@@ -74,12 +78,12 @@ resource "aws_route_table_association" "a" {
 
 # Security Groups
 resource "aws_security_group" "allow_traffic" {
-  name = "alloweb_traffic"
-  description = "Allow openvpn"
+  name = "vpn-server-SG"
+  description = "Allow openvpn traffic http and https"
   vpc_id = aws_vpc.vpn_server_vpc.id
 
   ingress {
-    description = "https"
+    description = "allow https"
     from_port = 443
     to_port = 443
     protocol = "tcp"
@@ -87,7 +91,7 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description = "http"
+    description = "allow http"
     from_port = 80
     to_port = 80
     protocol = "tcp"
@@ -95,7 +99,7 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description = "ssh"
+    description = "allow ssh"
     from_port = 22
     to_port = 22
     protocol = "tcp"
@@ -110,7 +114,7 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   tags = {
-    Name = "allow ssh and openvpn"
+    Name = "allow ssh, web and openvpn"
   }
 }
 
