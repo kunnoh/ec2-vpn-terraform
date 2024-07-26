@@ -146,13 +146,14 @@ resource "aws_instance" "vpn_server" {
     inline = [
       "sudo apt update",
       "sudo apt upgrade -y",
-      "sudo apt install ca-certificates curl tzdata w-get net-tools gnupg ufw -y",
+      "sudo apt install ca-certificates curl tzdata w-get net-tools gnupg ufw certbot -y",
       "sudo ufw allow 80 && sudo ufw allow 22 && sudo ufw allow 443 && sudo ufw allow 943 && sudo ufw allow 1194/udp",
-      "sudo systemctl enable ufw",
-      "sudo systemctl start ufw",
+      "sudo ufw enable",
+      "udo systemctl start ufw",
       "wget https://as-repository.openvpn.net/as/install.sh -O /tmp/openvpn-install.sh",
       "sudo chmod +x /tmp/openvpn-install.sh",
       "DEBIAN_FRONTEND=noninteractive yes | sudo /tmp/openvpn-install.sh >> output-$(date).log",
+      #"sudo certbot certonly --standalone --preferred-challenges http -d yusic.zapto.org"
     ]
 
     connection {
