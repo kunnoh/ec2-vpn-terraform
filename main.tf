@@ -64,7 +64,7 @@ resource "aws_route_table" "vpn_route_table" {
 resource "aws_subnet" "vpn_subnet_main" {
   vpc_id = aws_vpc.vpn_server_vpc.id
   cidr_block = "10.0.1.0/24"
-  availability_zone = "eu-central-1a"
+  availability_zone = var.availability_zone
   tags = {
     Name = "vpn subnet"
   }
@@ -79,7 +79,7 @@ resource "aws_route_table_association" "a" {
 # Security Groups
 resource "aws_security_group" "allow_traffic" {
   name = "vpn-server-SG"
-  description = "Allow openvpn traffic http and https"
+  description = "Allow openvpn, traffic, http and https"
   vpc_id = aws_vpc.vpn_server_vpc.id
 
   ingress {
@@ -106,6 +106,22 @@ resource "aws_security_group" "allow_traffic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Allow OpenVpn"
+    protocol = "tcp"
+    from_port = 943
+    to_port = 943
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow OpenVpn"
+    protocol = "udp"
+    from_port = 1194
+    to_port = 1194
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port = 0
     to_port = 0
@@ -122,19 +138,21 @@ resource "aws_security_group" "allow_traffic" {
 resource "aws_instance" "vpn_server" {
   instance_type = var.ec2_instance_type
   ami = "ami-075d8cd2ff03fa6e9"
-  availability_zone = "eu-central-1a"
+  availability_zone = var.availability_zone
   key_name = aws_key_pair.vpn_ssh_keys.key_name
   associate_public_ip_address = true
 
   provisioner "remote-exec" {
     inline = [
-      "sudo apt update -y",
+      "sudo apt update",
       "sudo apt upgrade -y",
-      "sudo apt install openvpn nginx -y",
-      "sudo systemctl enable openvpn",
-      "sudo systemctl start openvpn",
-      "sudo systemctl enable nginx",
-      "sudo systemctl start nginx"
+      "sudo apt install ca-certificates curl tzdata w-get net-tools gnupg ufw -y",
+      "sudo ufw allow 80 && sudo ufw allow 22 && sudo ufw allow 443 && sudo ufw allow 943 && sudo ufw allow 1194/udp",
+      "sudo systemctl enable ufw",
+      "sudo systemctl start ufw",
+      "wget https://as-repository.openvpn.net/as/install.sh -O /tmp/openvpn-install.sh",
+      "sudo chmod +x /tmp/openvpn-install.sh",
+      "DEBIAN_FRONTEND=noninteractive yes | sudo /tmp/openvpn-install.sh >> output-$(date).log",
     ]
 
     connection {

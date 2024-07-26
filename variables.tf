@@ -1,7 +1,8 @@
 variable "vpn_ssh_key" {
   description = "vpn ssh public key"
   type = string
-  default = ".terraform/local/public_key"
+  default = ".terraform/local/vpn_key"
+  # default = "vpn_key"
 }
 
 variable "ec2_instance_type" {
