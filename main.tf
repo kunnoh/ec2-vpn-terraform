@@ -165,6 +165,6 @@ resource "aws_instance" "vpn_server" {
   }
 
   tags = {
-    Name = "vpnServer"
+    Name = "Vpn Server"
   }
 }
