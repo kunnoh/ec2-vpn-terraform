@@ -7,32 +7,28 @@ terraform {
   }
 }
 
-data "aws_region" "current" {
-  provider = aws.EuropeGermany
-}
-
 # Key-pair
-resource "tls_private_key" "vpn_rsa_4096" {
-  algorithm   = "RSA"
-  rsa_bits  = 4096
+resource "tls_private_key" "vpn_ed25519" {
+  algorithm = "ED25519"
 }
 
 resource "aws_key_pair" "vpn_ssh_keys" {
   key_name   = var.vpn_ssh_key
-  public_key = tls_private_key.vpn_rsa_4096.public_key_openssh
+  public_key = tls_private_key.vpn_ed25519.public_key_openssh
 }
 
 # Save key on host
 resource "local_file" "private_key" {
-  content = tls_private_key.vpn_rsa_4096.private_key_pem
+  content = tls_private_key.vpn_ed25519.private_key_openssh
   filename = var.vpn_ssh_key
 }
 
 # VPC
 resource "aws_vpc" "vpn_server_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = "10.6.9.0/28"
+  enable_dns_hostnames = true
   tags = {
-    Name = "vpn vpc"
+    Name = "vpn_vpc"
   }
 }
 
@@ -63,7 +59,7 @@ resource "aws_route_table" "vpn_route_table" {
 # Subnet
 resource "aws_subnet" "vpn_subnet_main" {
   vpc_id = aws_vpc.vpn_server_vpc.id
-  cidr_block = "10.0.1.0/24"
+  cidr_block = aws_vpc.vpn_server_vpc.cidr_block
   availability_zone = var.availability_zone
   tags = {
     Name = "vpn subnet"
@@ -83,7 +79,7 @@ resource "aws_security_group" "allow_traffic" {
   vpc_id = aws_vpc.vpn_server_vpc.id
 
   ingress {
-    description = "allow https"
+    description = "allow HTTPS"
     from_port = 443
     to_port = 443
     protocol = "tcp"
@@ -91,7 +87,7 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description = "allow http"
+    description = "allow HTTP"
     from_port = 80
     to_port = 80
     protocol = "tcp"
@@ -99,7 +95,7 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description = "allow ssh"
+    description = "allow SSH"
     from_port = 22
     to_port = 22
     protocol = "tcp"
@@ -146,10 +142,10 @@ resource "aws_instance" "vpn_server" {
     inline = [
       "sudo apt update",
       "sudo apt upgrade -y",
-      "sudo apt install ca-certificates curl tzdata w-get net-tools gnupg ufw certbot -y",
+      "sudo apt install ca-certificates curl tzdata wget net-tools gnupg ufw certbot -y",
       "sudo ufw allow 80 && sudo ufw allow 22 && sudo ufw allow 443 && sudo ufw allow 943 && sudo ufw allow 1194/udp",
       "sudo ufw enable",
-      "udo systemctl start ufw",
+      "sudo systemctl start ufw",
       "wget https://as-repository.openvpn.net/as/install.sh -O /tmp/openvpn-install.sh",
       "sudo chmod +x /tmp/openvpn-install.sh",
       "DEBIAN_FRONTEND=noninteractive yes | sudo /tmp/openvpn-install.sh >> output-$(date).log",
