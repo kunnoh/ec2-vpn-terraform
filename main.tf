@@ -75,7 +75,7 @@ resource "aws_route_table_association" "a" {
 # Security Groups
 resource "aws_security_group" "allow_traffic" {
   name = "vpn-server-SG"
-  description = "Allow openvpn, traffic, http and https"
+  description = "Allow vpn, ssh, http and https"
   vpc_id = aws_vpc.vpn_server_vpc.id
 
   ingress {
@@ -103,20 +103,28 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description = "Allow OpenVpn"
-    protocol = "tcp"
-    from_port = 943
-    to_port = 943
+    description = "Allow WireGuard"
+    protocol = "udp"
+    from_port = 51820
+    to_port = 51820
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "Allow OpenVpn"
-    protocol = "udp"
-    from_port = 1194
-    to_port = 1194
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   description = "Allow OpenVpn"
+  #   protocol = "tcp"
+  #   from_port = 943
+  #   to_port = 943
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+
+  # ingress {
+  #   description = "Allow OpenVpn"
+  #   protocol = "udp"
+  #   from_port = 1194
+  #   to_port = 1194
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   egress {
     from_port = 0
@@ -126,39 +134,41 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   tags = {
-    Name = "allow ssh, web and openvpn"
+    Name = "allow ssh, web and vpn"
   }
 }
 
 # ec2 instance
 resource "aws_instance" "vpn_server" {
-  instance_type = var.ec2_instance_type
   ami = "ami-075d8cd2ff03fa6e9"
-  availability_zone = var.availability_zone
+  instance_type = var.ec2_instance_type
   key_name = aws_key_pair.vpn_ssh_keys.key_name
   associate_public_ip_address = true
+  availability_zone = var.availability_zone
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt update",
-      "sudo apt upgrade -y",
-      "sudo apt install ca-certificates curl tzdata wget net-tools gnupg ufw certbot -y",
-      "sudo ufw allow 80 && sudo ufw allow 22 && sudo ufw allow 443 && sudo ufw allow 943 && sudo ufw allow 1194/udp",
-      "sudo ufw enable",
-      "sudo systemctl start ufw",
-      "wget https://as-repository.openvpn.net/as/install.sh -O /tmp/openvpn-install.sh",
-      "sudo chmod +x /tmp/openvpn-install.sh",
-      "DEBIAN_FRONTEND=noninteractive yes | sudo /tmp/openvpn-install.sh >> output-$(date).log",
-      #"sudo certbot certonly --standalone --preferred-challenges http -d yusic.zapto.org"
-    ]
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "sudo apt update",
+  #     "sudo apt upgrade -y",
+  #     "sudo apt install ca-certificates curl tzdata wget net-tools gnupg ufw certbot -y",
+  #     "sudo ufw allow 80 && sudo ufw allow 22 && sudo ufw allow 443 && sudo ufw allow 943 && sudo ufw allow 1194/udp",
+  #     "sudo ufw enable",
+  #     "sudo systemctl start ufw",
+  #     "wget https://as-repository.openvpn.net/as/install.sh -O /tmp/openvpn-install.sh",
+  #     "sudo chmod +x /tmp/openvpn-install.sh",
+  #     "DEBIAN_FRONTEND=noninteractive yes | sudo /tmp/openvpn-install.sh >> output-$(date).log",
+  #     #"sudo certbot certonly --standalone --preferred-challenges http -d yusic.zapto.org"
+  #   ]
 
-    connection {
-      type        = "ssh"
-      user        = "admin"
-      private_key = file("${var.vpn_ssh_key}")
-      host        = self.public_ip
-    }
-  }
+  #   connection {
+  #     type        = "ssh"
+  #     user        = "admin"
+  #     private_key = file("${var.vpn_ssh_key}")
+  #     host        = self.public_ip
+  #   }
+  # }
+
+  # Set key permissions
 
   tags = {
     Name = "Vpn Server"
