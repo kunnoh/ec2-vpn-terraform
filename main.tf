@@ -146,10 +146,10 @@ resource "aws_instance" "vpn_server" {
   associate_public_ip_address = true
   availability_zone = var.availability_zone
 
-  # provisioner "remote-exec" {
-  #   inline = [
-  #     "sudo apt update",
-  #     "sudo apt upgrade -y",
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update",
+      "sudo apt upgrade -y",
   #     "sudo apt install ca-certificates curl tzdata wget net-tools gnupg ufw certbot -y",
   #     "sudo ufw allow 80 && sudo ufw allow 22 && sudo ufw allow 443 && sudo ufw allow 943 && sudo ufw allow 1194/udp",
   #     "sudo ufw enable",
@@ -158,18 +158,20 @@ resource "aws_instance" "vpn_server" {
   #     "sudo chmod +x /tmp/openvpn-install.sh",
   #     "DEBIAN_FRONTEND=noninteractive yes | sudo /tmp/openvpn-install.sh >> output-$(date).log",
   #     #"sudo certbot certonly --standalone --preferred-challenges http -d yusic.zapto.org"
-  #   ]
+    ]
 
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "admin"
-  #     private_key = file("${var.vpn_ssh_key}")
-  #     host        = self.public_ip
-  #   }
-  # }
+    connection {
+      type        = "ssh"
+      user        = var.ec2_username
+      private_key = file("${var.vpn_ssh_key}")
+      host        = self.public_ip
+    }
+  }
 
   # Set key permissions
-
+  provisioner "local-exec" {
+    command = "chmod 400 ${var.vpn_ssh_key}"
+  }
   tags = {
     Name = "Vpn Server"
   }
