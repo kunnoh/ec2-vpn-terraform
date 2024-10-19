@@ -47,10 +47,15 @@ aws configure
 
 
 ### Install terraform
-Install required dependencies
+Add the official HashiCorp repository to your system
+
 ```sh
-sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install terraform
 ```
+
+
 Verify
 ```sh
 terraform -v
@@ -60,14 +65,7 @@ or
 terraform -version
 ```
 
-Add the official HashiCorp repository to your system
 
-The lsb_release -cs command finds the distribution release codename for your current system, such as `buster`, `groovy`, or `sid`.
-```sh
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-sudo tee /etc/apt/sources.list.d/hashicorp.list
-```
 
 
 ## Reference
