@@ -1,14 +1,19 @@
 variable "vpn_ssh_key" {
-  description = "vpn ssh public key"
+  description = "vpn ssh private key"
   type = string
-  default = ".terraform/local/vpn_key"
-  # default = "vpn_key"
+  default = ".terraform/local/priv_key"
 }
 
 variable "ec2_instance_type" {
-  description = "type of instance to provision"
+  description = "type of instance"
   type = string
   default = "t2.micro"
+}
+
+variable "ec2_instance_ami" {
+  description = "type of instance ami"
+  type = string
+  default = "ami-075d8cd2ff03fa6e9"
 }
 
 variable "ec2_username" {
@@ -18,7 +23,8 @@ variable "ec2_username" {
 }
 
 variable "availability_zone" {
-  description = "availability region of your system"
+  description = "availability region for the ec2"
   type = string
-  default = "eu-central-1a"
+  default = "us-east-2"
+  # default = "eu-central-1a"
 }
