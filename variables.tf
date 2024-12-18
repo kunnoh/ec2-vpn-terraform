@@ -25,6 +25,5 @@ variable "ec2_username" {
 variable "availability_zone" {
   description = "availability region for the ec2"
   type = string
-  default = "us-east-2"
-  # default = "eu-central-1a"
+  default = "eu-central-1a"
 }
